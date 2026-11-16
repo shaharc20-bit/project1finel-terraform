@@ -6,8 +6,8 @@ variable "region" {
 
 variable "vpc_id" {
   type        = string
-  default     = "vpc-044604d0bfb707142"
-  description = "The existing VPC given by the instructor (do NOT create a new VPC)"
+  default     = ""
+  description = "Existing VPC to use (no VPC is created). Empty = the default VPC of the region. The instructor's VPC is vpc-044604d0bfb707142 (exists only in his account)"
 }
 
 variable "subnet_id" {

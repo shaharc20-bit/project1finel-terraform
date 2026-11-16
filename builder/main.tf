@@ -112,6 +112,46 @@ resource "aws_security_group" "builder" {
   }
 }
 
+# ---------------------------------------------------------------- IAM role (no AWS keys on the instance)
+# The Flask app only needs to READ EC2 / VPC / ELB / AMI data. With an instance role boto3 finds the
+# credentials by itself (instance metadata), so no access key has to be copied to the builder.
+resource "aws_iam_role" "builder" {
+  name = "builder-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "builder_read_only" {
+  name = "read-only"
+  role = aws_iam_role.builder.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "ec2:DescribeInstances",
+        "ec2:DescribeVpcs",
+        "ec2:DescribeImages",
+        "elasticloadbalancing:DescribeLoadBalancers",
+      ]
+      Resource = "*"
+    }]
+  })
+}
+
+resource "aws_iam_instance_profile" "builder" {
+  name = "builder-profile"
+  role = aws_iam_role.builder.name
+}
+
 # ---------------------------------------------------------------- the instance
 resource "aws_instance" "builder" {
   ami                         = data.aws_ami.ubuntu.id
@@ -120,6 +160,14 @@ resource "aws_instance" "builder" {
   vpc_security_group_ids      = [aws_security_group.builder.id]
   key_name                    = aws_key_pair.builder_key.key_name
   associate_public_ip_address = true
+  iam_instance_profile        = aws_iam_instance_profile.builder.name
+
+  # IMDSv2 only; hop limit 2 lets the Docker container reach the instance credentials
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
 
   root_block_device {
     volume_size = 30

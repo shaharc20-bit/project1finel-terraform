@@ -3,7 +3,7 @@
 Separate Terraform configuration (own state) for the exam task. It does **not** touch the lab in `../` (k3s, Jenkins, Argo CD).
 
 ## What was implemented
-- Region `us-east-1`, the **existing VPC `vpc-044604d0bfb707142`** (no VPC is created) and its first public subnet.
+- Region `us-east-1`, an **existing VPC** (no VPC is created): by default the default VPC of the region, or any VPC given with `-var vpc_id=vpc-...` (the instructor's one is `vpc-044604d0bfb707142`), and its first public subnet.
 - EC2 instance named **`builder`**, `t3.medium`, Ubuntu 24.04.
 - SSH key: `tls_private_key` -> `local_file` `builder_key.pem` (mode 0600, git-ignored) -> `aws_key_pair` `builder-key`.
 - Security group: ports **22** and **5001**, only from **my IP** (found with checkip.amazonaws.com), all outbound allowed.
@@ -11,7 +11,7 @@ Separate Terraform configuration (own state) for the exam task. It does **not** 
 - Outputs: `public_ip`, `ssh_private_key_path`, `ssh_key_name`, `security_group_id`, `ssh_command`, `app_url`.
 
 ## Missing / blockers
-- The VPC `vpc-044604d0bfb707142` exists only in the instructor's AWS account. In another account `terraform plan` fails on the VPC lookup; pass your own with `-var vpc_id=vpc-...`.
+- The VPC `vpc-044604d0bfb707142` exists only in the instructor's AWS account, so by default the builder uses the default VPC of `us-east-1` in my account. With the instructor's account: `terraform apply -var vpc_id=vpc-044604d0bfb707142`.
 - Jenkins is not installed here; the Jenkins + Argo CD setup is in `../` (see `../README.md`).
 
 ## Run

@@ -1,4 +1,4 @@
-# Exam task: EC2 "builder" with Docker + Docker Compose in us-east-1, inside the EXISTING VPC.
+# Exam task: EC2 "builder" with Docker + Docker Compose in us-east-1, inside an EXISTING VPC (default VPC unless var.vpc_id is set).
 # No VPC is created here (exam rule). Everything else is created by this configuration.
 
 terraform {
@@ -16,8 +16,10 @@ provider "aws" {
 }
 
 # ---------------------------------------------------------------- existing network
+# var.vpc_id empty -> the default VPC of the region (it exists in every AWS account).
 data "aws_vpc" "selected" {
-  id = var.vpc_id
+  id      = var.vpc_id != "" ? var.vpc_id : null
+  default = var.vpc_id == "" ? true : null
 }
 
 # A public subnet of that VPC (auto-assigns public IPs). Set var.subnet_id to choose one yourself.
